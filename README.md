@@ -39,6 +39,37 @@ English | [简体中文](README_zh-CN.md)
 
 </div>
 
+## Warning for Installation with Py314
+
+When using Python 3.14 (py314), please use `MMCV_WITH_OPS=1 python setup.py install` for installation. 
+
+Otherwise, the custom operators will not be compiled, because the following code block will not be executed:
+
+In this case, `EXT_TYPE` remains an empty string (`EXT_TYPE = ''`), and thus the extension operators are skipped during installation.
+
+```python
+try:
+    import torch
+    if torch.__version__ == 'parrots':
+        from parrots.utils.build_extension import BuildExtension
+        EXT_TYPE = 'parrots'
+    elif (hasattr(torch, 'is_mlu_available') and torch.is_mlu_available()) or \
+            os.getenv('FORCE_MLU', '0') == '1':
+        from torch_mlu.utils.cpp_extension import BuildExtension
+        EXT_TYPE = 'pytorch'
+    elif (hasattr(torch, 'is_musa_available') and torch.is_musa_available()) \
+            or os.getenv('FORCE_MUSA', '0') == '1':
+        from torch_musa.utils.musa_extension import BuildExtension
+        EXT_TYPE = 'pytorch'
+    else:
+        from torch.utils.cpp_extension import BuildExtension
+        EXT_TYPE = 'pytorch'
+    cmd_class = {'build_ext': BuildExtension}
+except ModuleNotFoundError:
+    cmd_class = {}
+    print('Skip building ext ops due to the absence of torch.')
+```
+
 ## Highlights
 
 The OpenMMLab team released a new generation of training engine [MMEngine](https://github.com/open-mmlab/mmengine) at the World Artificial Intelligence Conference on September 1, 2022. It is a foundational library for training deep learning models. Compared with MMCV, it provides a universal and powerful runner, an open architecture with a more unified interface, and a more customizable training process.
